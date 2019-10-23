@@ -1,5 +1,7 @@
 package com.jindanupajit.Oct21Java.AdditionalClassExercises.utils.Menu;
 
+import com.jindanupajit.Oct21Java.AdditionalClassExercises.LostAndFoundApplication.controller.Event;
+
 import java.util.ArrayList;
 
 public class MenuList extends ArrayList<MenuItem> {
@@ -17,8 +19,8 @@ public class MenuList extends ArrayList<MenuItem> {
         return ++priority_auto_increment;
     }
 
-    public MenuItem addNext(String label) {
-        MenuItem item = new MenuItem(label,this.getNextPriority());
+    public MenuItem addNext(Event event, String label) {
+        MenuItem item = new MenuItem(label,this.getNextPriority(),event);
         this.add(item);
         return item;
     }

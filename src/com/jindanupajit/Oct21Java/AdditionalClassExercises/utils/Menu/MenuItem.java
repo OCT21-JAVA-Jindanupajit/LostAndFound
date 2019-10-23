@@ -1,17 +1,21 @@
 package com.jindanupajit.Oct21Java.AdditionalClassExercises.utils.Menu;
 
+import com.jindanupajit.Oct21Java.AdditionalClassExercises.LostAndFoundApplication.controller.Event;
+
 public class MenuItem implements Comparable<MenuItem> {
 
     private String label;
     private long priority;
+    private Event event;
 
-    public MenuItem(String label, long priority) {
+    public MenuItem(String label, long priority,Event event) {
         this.label = label;
         this.priority = priority;
+        this.event = event;
     }
 
     public MenuItem() {
-        this("",0);
+        this("",0, new Event(Event.Menu.QUIT,null));
     }
 
     public String getLabel() {
@@ -36,5 +40,9 @@ public class MenuItem implements Comparable<MenuItem> {
            return this.label.compareToIgnoreCase(o.getLabel());
         }
         return (this.priority > o.getPriority()) ? 1 : -1;
+    }
+
+    public Event getEvent() {
+        return event;
     }
 }
