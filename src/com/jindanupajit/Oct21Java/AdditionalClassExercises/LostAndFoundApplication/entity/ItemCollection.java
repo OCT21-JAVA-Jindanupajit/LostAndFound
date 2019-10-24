@@ -43,6 +43,7 @@ public class ItemCollection extends ArrayList<Item> {
     public void increaseCategoryCounter(Item.Category category) {
         counter.putIfAbsent(category,0);
         counter.replace(category,counter.get(category)+1);
+
     }
     public void decreaseCategoryCounter(Item.Category category) {
         counter.putIfAbsent(category,0);

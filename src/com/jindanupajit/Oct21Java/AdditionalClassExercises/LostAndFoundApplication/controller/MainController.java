@@ -5,6 +5,8 @@ import com.jindanupajit.Oct21Java.AdditionalClassExercises.LostAndFoundApplicati
 import com.jindanupajit.Oct21Java.AdditionalClassExercises.LostAndFoundApplication.entity.Item;
 import com.jindanupajit.Oct21Java.AdditionalClassExercises.utils.Menu.Menu;
 
+import java.util.Scanner;
+
 public class MainController {
 
 enum ViewType{
@@ -27,6 +29,8 @@ enum ViewType{
                 return MainMenu(event.getMetaData());
             case VIEW:
                 return View(event.getMetaData());
+            case CREATE:
+                return CreateItem(event.getMetaData());
             case ITEM_VIEW:
                 return ViewItem(event.getMetaData());
             case MARK_FOUND:
@@ -49,6 +53,7 @@ enum ViewType{
         System.out.println("=========");
         Menu menu = new Menu();
         menu.getMenuList().addNext(new Event(Event.Menu.VIEW,ViewType.LOST_AND_FOUND), "View lost and found database");
+        menu.getMenuList().addNext(new Event(Event.Menu.CREATE), "Create new record");
         menu.getMenuList().addNext(new Event(Event.Menu.VIEW,ViewType.ALL), "View all database including deleted items");
         menu.getMenuList().addNext(new Event(Event.Menu.QUIT),"Quit");
         while(true) {
@@ -68,20 +73,28 @@ enum ViewType{
     }
 
     protected Event View(Object data) {
+        class MissingItemCounter {
+            public int total = 0;
+            public int clothing = 0;
+            public int pet = 0;
+            public int other = 0;
+        };
+        final MissingItemCounter missing = new MissingItemCounter();
+
 
         ViewType viewType = data==null?ViewType.LOST_AND_FOUND:(ViewType) data;
 
         System.out.println("Lost and Found");
         System.out.println("==============");
         Menu menu = new Menu();
-        //todo: cleanup
-        final int[] missingClothing = {0};
-        final int[] missingPet = {0};
-        final int[] missingOther = {0};
+
+
 
         LostAndFoundApplication.AllItems.forEach(
 
                 item -> {
+
+
 
                     if ((viewType == ViewType.ALL) || (item.getStatus() != Item.Status.FOUND_DELETED))
                         menu.getMenuList().addNext(new Event(Event.Menu.ITEM_VIEW, item),
@@ -93,15 +106,15 @@ enum ViewType{
                     switch (item.getCategory()) {
                         case CLOTHING:
                             if (item.getStatus() == Item.Status.LOST)
-                                ++missingClothing[0];
+                                ++missing.clothing;
                             break;
                         case PET:
                             if (item.getStatus() == Item.Status.LOST)
-                                ++missingPet[0];
+                                ++missing.pet;
                             break;
                         case OTHER:
                             if (item.getStatus() == Item.Status.LOST)
-                                ++missingOther[0];
+                                ++missing.other;
                             break;
                         default:
                             // What is that?
@@ -111,33 +124,55 @@ enum ViewType{
                 }
         );
 
-        int missing = missingClothing[0] + missingPet[0] + missingOther[0];
+        missing.total = missing.clothing + missing.pet+ missing.other;
 
-        if (missing == 0) {
-            System.out.println("There is nothing missing.");
-        }
-        else {
-            System.out.print("There");
-        }
+        int missingCategory = 0;
+        String message = "";
+        String clothing = "";
+        String pet = "";
+        String other = "";
 
-        if (missingClothing[0] > 1) {
-            System.out.printf(" are %d items of clothing",missingClothing[0]);
-        } else if (missingClothing[0] == 1) {
-            System.out.print(" are 1 item of clothing");
-        }
 
-        if (missingPet[0] > 1) {
-            System.out.printf(" are %d items of clothing",missingClothing[0]);
-        } else if (missingClothing[0] == 1) {
-            System.out.print(" are 1 item of clothing");
+        if (missing.clothing > 0) {
+            clothing = String.format("%d item%s of clothing", missing.clothing, missing.clothing > 1 ? "s" : "");
+            ++missingCategory;
         }
 
-        System.out.println(" missing");
+        if (missing.pet > 0) {
+            pet = String.format("%d pet%s",missing.pet,missing.pet>1?"s":"");
+            ++missingCategory;
+        }
+
+        if (missing.other > 0) {
+            other = String.format("%d other item%s",missing.other,missing.other>1?"s":"");
+            ++missingCategory;
+        }
+
+        switch (missingCategory) {
+            case 0:
+                    message = "nothing";
+                    break;
+            case 1:
+                    // Only one message from missing category
+                    message = clothing+pet+other;
+                    break;
+            case 2:
+                if (missing.clothing > 0)
+                    clothing += " and ";
+                else
+                    pet += " and ";
+                message = clothing+pet+other;
+                break;
+            case 3:
+                    message = clothing+", "+pet+" and "+other;
+                    break;
 
 
+        }
 
+        message = "There "+((missing.total > 1)?"are ":"is ")+message+" missing.";
 
-
+        System.out.println(message+"\n");
 
         while(true) {
             Event choice = menu.waitForInput();
@@ -153,6 +188,88 @@ enum ViewType{
             }
 
         }
+    }
+
+    protected Event CreateItem(Object data) {
+        Item item;
+        Scanner keyboardScanner = new Scanner(System.in);
+
+            System.out.print("Label > ");
+            String label = (keyboardScanner.nextLine()).trim();
+
+            Item.Category category;
+            Item.Status status;
+
+            label = label.substring(0, Math.min(label.length(), 40));
+
+            Menu menu = new Menu();
+            menu.getMenuList().addNext(new Event(Event.Menu.INPUT,Item.Category.CLOTHING), "Clothing");
+            menu.getMenuList().addNext(new Event(Event.Menu.INPUT,Item.Category.PET), "Pet");
+            menu.getMenuList().addNext(new Event(Event.Menu.INPUT,Item.Category.OTHER), "Other");
+            whileLoop:
+            while(true) {
+                Event choice = menu.waitForInput("Category > ");
+
+                switch(choice.getEvent()) {
+                    case BAD_CHOICE:
+                        System.out.println("** Bad choice, try again!");
+                        break;
+                    case BACK:
+                        System.out.println("** Data discarded!");
+                        return new Event(Event.Menu.MAIN_MENU);
+                    case INPUT:
+                        category = (Item.Category) choice.getMetaData();
+                        break whileLoop;
+                    default:
+                        return choice;
+                }
+
+            }
+
+            menu = new Menu();
+            menu.getMenuList().addNext(new Event(Event.Menu.INPUT,Item.Status.LOST), "Lost");
+            menu.getMenuList().addNext(new Event(Event.Menu.INPUT,Item.Status.FOUND), "Found");
+            whileLoop:
+            while(true) {
+                Event choice = menu.waitForInput("Lost or Found? > ");
+                switch(choice.getEvent()) {
+                    case BAD_CHOICE:
+                        System.out.println("** Bad choice, try again!");
+                        break;
+                    case BACK:
+                        System.out.println("** Data discarded!");
+                        return new Event(Event.Menu.MAIN_MENU);
+                    case INPUT:
+                        status = (Item.Status) choice.getMetaData();
+                        break whileLoop;
+                    default:
+                        return choice;
+                }
+
+            }
+
+            ItemCardView(item = new Item(label,category,status));
+
+            menu = new Menu();
+            menu.getMenuList().addNext(new Event(Event.Menu.INPUT), "Yes, add to database");
+            menu.getMenuList().addNext(new Event(Event.Menu.BACK), "No, discard and go back to main menu");
+            while(true) {
+                Event choice = menu.waitForInput("Add ? > ");
+                switch(choice.getEvent()) {
+                    case BAD_CHOICE:
+                        System.out.println("** Bad choice, try again!");
+                        break;
+                    case BACK:
+                        System.out.println("** Data discarded!");
+                        return new Event(Event.Menu.MAIN_MENU);
+                    case INPUT:
+                        LostAndFoundApplication.AllItems.addAndRescan(item);
+                        return new Event(Event.Menu.VIEW,ViewType.LOST_AND_FOUND);
+                    default:
+                        return choice;
+                }
+
+            }
     }
 
     protected Event ViewItem(Object data) {
@@ -251,7 +368,7 @@ enum ViewType{
                 "\n\t| Item Number #%3d                 %7s |"+
                 "\n\t| %-40s |"+
                 "\n\t| Category %-10s Status [ %-6s ]    |"+
-                "\n\t+------------------------------------------+",
+                "\n\t+------------------------------------------+\n\n",
                 item.getId(),
                 item.getStatus()==Item.Status.FOUND_DELETED?"DELETED":"       ",
                 item.getName(),

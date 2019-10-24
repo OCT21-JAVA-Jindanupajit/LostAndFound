@@ -4,7 +4,6 @@ import java.util.Stack;
 
 public class Event {
 
-
     public enum Menu {
         BACK,
         BAD_CHOICE,
@@ -16,8 +15,11 @@ public class Event {
         MARK_LOST,
         MARK_FOUND,
         RESTORE,
-        QUIT
+        QUIT,
+        CREATE,
+        INPUT
     }
+
 
     private Event.Menu event;
     private Object metaData;
